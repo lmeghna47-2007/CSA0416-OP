@@ -1,0 +1,95 @@
+
+#include <stdio.h>
+
+struct Process {
+    int pid;
+    int burst_time;
+    int priority;
+    int waiting_time;
+    int turnaround_time;
+};
+
+int main() {
+    struct Process p[100], temp;
+    int n, i, j;
+    float avg_waiting = 0, avg_turnaround = 0;
+
+    printf("Enter the number of processes: ");
+    scanf("%d", &n);
+
+    if (n <= 0 || n > 100) {
+        printf("Invalid number of processes!\n");
+        return 1;
+    }
+
+    for (i = 0; i < n; i++) {
+        p[i].pid = i + 1;
+
+        printf("\nEnter burst time for Process %d: ", p[i].pid);
+        scanf("%d", &p[i].burst_time);
+
+        printf("Enter priority for Process %d: ", p[i].pid);
+        scanf("%d", &p[i].priority);
+
+        if (p[i].burst_time <= 0) {
+            printf("Burst time must be positive!\n");
+            return 1;
+        }
+    }
+
+    /* Sort processes by priority (smaller number = higher priority) */
+    for (i = 0; i < n - 1; i++) {
+        for (j = i + 1; j < n; j++) {
+            if (p[i].priority > p[j].priority) {
+                temp = p[i];
+                p[i] = p[j];
+                p[j] = temp;
+            }
+        }
+    }
+
+    /* Calculate waiting and turnaround times */
+    p[0].waiting_time = 0;
+
+    for (i = 0; i < n; i++) {
+        if (i > 0) {
+            p[i].waiting_time =
+                p[i - 1].waiting_time + p[i - 1].burst_time;
+        }
+
+        p[i].turnaround_time =
+            p[i].waiting_time + p[i].burst_time;
+
+        avg_waiting += p[i].waiting_time;
+        avg_turnaround += p[i].turnaround_time;
+    }
+
+    avg_waiting /= n;
+    avg_turnaround /= n;
+
+    /* Display results */
+    printf("\n--- Priority Scheduling Result ---\n");
+    printf("PID\tBurst\tPriority\tWaiting\tTurnaround\n");
+
+    for (i = 0; i < n; i++) {
+        printf("P%d\t%d\t%d\t\t%d\t%d\n",
+               p[i].pid,
+               p[i].burst_time,
+               p[i].priority,
+               p[i].waiting_time,
+               p[i].turnaround_time);
+    }
+
+    printf("\nAverage Waiting Time: %.2f", avg_waiting);
+    printf("\nAverage Turnaround Time: %.2f\n", avg_turnaround);
+
+    printf("\nExecution Order: ");
+    for (i = 0; i < n; i++) {
+        printf("P%d", p[i].pid);
+        if (i < n - 1)
+            printf(" -> ");
+    }
+    printf("\n");
+
+    return 0;
+}
