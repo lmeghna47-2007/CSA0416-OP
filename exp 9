@@ -1,0 +1,63 @@
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/ipc.h>
+#include <sys/shm.h>
+#include <sys/wait.h>
+#include <unistd.h>
+
+int main() {
+    int shmid;
+    char *shared_memory;
+    pid_t pid;
+
+    /* Create shared memory */
+    shmid = shmget(IPC_PRIVATE, 1024,
+                   IPC_CREAT | 0666);
+
+    if (shmid == -1) {
+        perror("shmget");
+        return 1;
+    }
+
+    /* Attach shared memory */
+    shared_memory = (char *)shmat(shmid, NULL, 0);
+
+    if (shared_memory == (char *)-1) {
+        perror("shmat");
+        shmctl(shmid, IPC_RMID, NULL);
+        return 1;
+    }
+
+    pid = fork();
+
+    if (pid < 0) {
+        perror("fork");
+        shmdt(shared_memory);
+        shmctl(shmid, IPC_RMID, NULL);
+        return 1;
+    }
+
+    if (pid == 0) {
+        /* Child process: writes data */
+        strcpy(shared_memory,
+               "Hello! Message sent using shared memory.");
+
+        printf("Child Process: Message written to shared memory.\n");
+        shmdt(shared_memory);
+        exit(0);
+    } else {
+        /* Parent waits for child to finish writing */
+        wait(NULL);
+
+        printf("Parent Process: Message received:\n");
+        printf("%s\n", shared_memory);
+
+        /* Detach and remove shared memory */
+        shmdt(shared_memory);
+        shmctl(shmid, IPC_RMID, NULL);
+    }
+
+    return 0;
+}
