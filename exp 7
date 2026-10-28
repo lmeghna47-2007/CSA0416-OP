@@ -1,0 +1,103 @@
+
+#include <stdio.h>
+
+struct Process {
+    int pid;
+    int arrival_time;
+    int burst_time;
+    int waiting_time;
+    int turnaround_time;
+    int completion_time;
+    int completed;
+};
+
+int main() {
+    struct Process p[100];
+    int n, i, time = 0, completed = 0;
+    int idx;
+    float avg_waiting = 0, avg_turnaround = 0;
+
+    printf("Enter number of processes: ");
+    scanf("%d", &n);
+
+    if (n <= 0 || n > 100) {
+        printf("Invalid number of processes!\n");
+        return 1;
+    }
+
+    for (i = 0; i < n; i++) {
+        p[i].pid = i + 1;
+
+        printf("Enter arrival time and burst time for P%d: ",
+               p[i].pid);
+        scanf("%d %d", &p[i].arrival_time, &p[i].burst_time);
+
+        if (p[i].arrival_time < 0 || p[i].burst_time <= 0) {
+            printf("Invalid arrival time or burst time!\n");
+            return 1;
+        }
+
+        p[i].completed = 0;
+    }
+
+    while (completed < n) {
+        idx = -1;
+
+        /* Find the shortest job among arrived processes */
+        for (i = 0; i < n; i++) {
+            if (p[i].arrival_time <= time &&
+                p[i].completed == 0) {
+
+                if (idx == -1 ||
+                    p[i].burst_time < p[idx].burst_time) {
+                    idx = i;
+                }
+            }
+        }
+
+        /* If no process has arrived, advance time */
+        if (idx == -1) {
+            time++;
+            continue;
+        }
+
+        /* Execute the selected process until completion */
+        p[idx].waiting_time = time - p[idx].arrival_time;
+
+        time += p[idx].burst_time;
+
+        p[idx].completion_time = time;
+        p[idx].turnaround_time =
+            p[idx].completion_time - p[idx].arrival_time;
+
+        p[idx].completed = 1;
+        completed++;
+    }
+
+    /* Calculate averages */
+    for (i = 0; i < n; i++) {
+        avg_waiting += p[i].waiting_time;
+        avg_turnaround += p[i].turnaround_time;
+    }
+
+    avg_waiting /= n;
+    avg_turnaround /= n;
+
+    /* Display results */
+    printf("\nPID\tAT\tBT\tCT\tTAT\tWT\n");
+
+    for (i = 0; i < n; i++) {
+        printf("P%d\t%d\t%d\t%d\t%d\t%d\n",
+               p[i].pid,
+               p[i].arrival_time,
+               p[i].burst_time,
+               p[i].completion_time,
+               p[i].turnaround_time,
+               p[i].waiting_time);
+    }
+
+    printf("\nAverage Waiting Time = %.2f\n", avg_waiting);
+    printf("Average Turnaround Time = %.2f\n", avg_turnaround);
+
+    return 0;
+}
