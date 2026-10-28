@@ -1,0 +1,117 @@
+
+
+#include <stdio.h>
+
+int main() {
+    int n, tq, i, time = 0, completed = 0;
+    int at[100], bt[100], rt[100];
+    int ct[100], tat[100], wt[100];
+    int added[100] = {0};
+    int queue[10000];
+    int front = 0, rear = 0;
+    int idx;
+
+    printf("Enter number of processes: ");
+    scanf("%d", &n);
+
+    if (n <= 0 || n > 100) {
+        printf("Invalid number of processes!\n");
+        return 1;
+    }
+
+    printf("Enter time quantum: ");
+    scanf("%d", &tq);
+
+    if (tq <= 0) {
+        printf("Time quantum must be positive!\n");
+        return 1;
+    }
+
+    for (i = 0; i < n; i++) {
+        printf("Enter arrival time and burst time for P%d: ", i + 1);
+        scanf("%d %d", &at[i], &bt[i]);
+
+        if (at[i] < 0 || bt[i] <= 0) {
+            printf("Invalid arrival or burst time!\n");
+            return 1;
+        }
+
+        rt[i] = bt[i];
+        ct[i] = 0;
+    }
+
+    while (completed < n) {
+        /* Add newly arrived processes to the queue */
+        for (i = 0; i < n; i++) {
+            if (at[i] <= time && !added[i]) {
+                queue[rear++] = i;
+                added[i] = 1;
+            }
+        }
+
+        /* If queue is empty, move to the next arrival */
+        if (front == rear) {
+            int next = -1;
+
+            for (i = 0; i < n; i++) {
+                if (!added[i] &&
+                    (next == -1 || at[i] < at[next])) {
+                    next = i;
+                }
+            }
+
+            if (next != -1) {
+                time = at[next];
+                continue;
+            }
+        }
+
+        if (front == rear)
+            break;
+
+        idx = queue[front++];
+
+        /* Execute for one time quantum or until completion */
+        int run = (rt[idx] < tq) ? rt[idx] : tq;
+
+        time += run;
+        rt[idx] -= run;
+
+        /* Add processes that arrived during execution */
+        for (i = 0; i < n; i++) {
+            if (at[i] <= time && !added[i]) {
+                queue[rear++] = i;
+                added[i] = 1;
+            }
+        }
+
+        if (rt[idx] == 0) {
+            ct[idx] = time;
+            completed++;
+        } else {
+            queue[rear++] = idx;
+        }
+    }
+
+    /* Calculate turnaround and waiting times */
+    float avg_wt = 0, avg_tat = 0;
+
+    printf("\nPID\tAT\tBT\tCT\tTAT\tWT\n");
+
+    for (i = 0; i < n; i++) {
+        tat[i] = ct[i] - at[i];
+        wt[i] = tat[i] - bt[i];
+
+        avg_wt += wt[i];
+        avg_tat += tat[i];
+
+        printf("P%d\t%d\t%d\t%d\t%d\t%d\n",
+               i + 1, at[i], bt[i],
+               ct[i], tat[i], wt[i]);
+    }
+
+    printf("\nAverage Waiting Time = %.2f\n", avg_wt / n);
+    printf("Average Turnaround Time = %.2f\n", avg_tat / n);
+
+    return 0;
+}
